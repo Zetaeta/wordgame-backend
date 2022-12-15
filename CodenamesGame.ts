@@ -1,5 +1,7 @@
 import Model from "./models/codenames";
 import WordSource from "./WordSource";
+import { Server } from "socket.io";
+// const io = new Server(3002);
 
 class CodeNamesGame {
   name: string;
@@ -7,6 +9,7 @@ class CodeNamesGame {
   players: Player[];
   words: string[];
   boardColors: Color[];
+  start: Team;
   key: Color[];
 
   constructor(data: any) {
@@ -18,15 +21,65 @@ class CodeNamesGame {
     this.boardColors = data.colors;
     this.key = data.key;
     this.words = data.words;
+    this.start = data.start;
+  }
+
+  // returns list of events to listen for
+  joinPlayer(
+    data: any,
+    send: (messageType: string, message: any) => void
+  ): [string, (data: any) => void][] {
+    this.players.push({
+      send: send,
+      name: "",
+      team: Red,
+    });
+    return [
+      [
+        "set color",
+        (data: any) => {
+          this.setColors(data);
+        },
+      ],
+    ];
+  }
+
+  broadcast(messageType: string, data: any) {
+    for (let { send } of this.players) {
+      if (send) {
+        send(messageType, data);
+      }
+    }
+  }
+
+  setColors(changes: [{ i: number; c: number }]) {
+    for (let { i, c } of changes) {
+      this.boardColors[i] = c;
+    }
+    this.broadcast("set color", changes);
+    this.save();
+  }
+
+  save() {
+    Model.findByIdAndUpdate(this.id, {
+      name: this.name,
+      words: this.words,
+      start: this.start,
+      players: [],
+      key: this.key,
+      colors: this.boardColors,
+    });
   }
 
   static current: Map<string, CodeNamesGame> = new Map();
 
   static async getById(id: string) {
+    console.log("looking for game with id" + id);
     if (CodeNamesGame.current.has(id)) {
       return CodeNamesGame.current.get(id);
     }
     const gameData = await Model.findById(id);
+    console.log(gameData);
     const game = new CodeNamesGame(gameData);
     CodeNamesGame.current.set(id, game);
     return game;
@@ -113,7 +166,7 @@ function shuffle<T>(a: T[]) {
 interface Player {
   name: string;
   team: Team;
-  send?: (message: any) => void;
+  send?: (messageType: string, message: any) => void;
 }
 // type Team = "red" | "blue";
 // type Color = Team | "gray" | "black";
@@ -125,4 +178,6 @@ enum Color {
   Black,
 }
 type Team = Color.Red | Color.Blue;
+const Red = Color.Red;
+const Blue = Color.Blue;
 export default CodeNamesGame;

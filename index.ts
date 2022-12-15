@@ -1,11 +1,42 @@
 import express from "express";
+import http from "http";
 import path from "path";
 import { WebSocketServer } from "ws";
 import { BigWordGame } from "./BigWordGame";
 import CodeNamesGame from "./CodenamesGame";
 import cors from "cors";
+import { Server } from "socket.io";
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ["http://192.168.0.104:3000", "http://localhost:3000"],
+  },
+});
+io.on("connection", (socket) => {
+  socket.onAny((eventName, message: any) => {
+    console.log("receiving message: " + eventName);
+    console.log(message);
+  });
+  socket.on("join codenames", (data) => {
+    console.log("join request");
+    console.log(data);
+    const game = CodeNamesGame.getById(data.id).then((game) => {
+      if (!game) {
+        console.log("no game with id" + data.id);
+        return;
+      }
+      game
+        .joinPlayer(data, (messageType, message) => {
+          socket.emit(messageType, message);
+        })
+        .forEach(([messageType, callback]) => {
+          socket.on(messageType, callback);
+        });
+    });
+  });
+});
 app.use(express.json());
 app.use(express.static("build"));
 app.use(cors());
@@ -38,7 +69,7 @@ app.post("/api/codenames/new", (request, response) => {
 });
 const PORT = 8000;
 const game = new BigWordGame();
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("server running");
   const wss = new WebSocketServer({ port: 3001 });
   wss.on("connection", (ws) => {
