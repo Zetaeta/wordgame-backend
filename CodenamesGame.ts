@@ -1,6 +1,7 @@
 import Model from "./models/codenames";
+import { io } from "./index";
 import WordSource from "./WordSource";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 // const io = new Server(3002);
 
 class CodeNamesGame {
@@ -45,10 +46,21 @@ class CodeNamesGame {
   }
 
   broadcast(messageType: string, data: any) {
-    for (let { send } of this.players) {
-      if (send) {
-        send(messageType, data);
-      }
+    io.to("cn-" + this.id).emit(messageType, data);
+    return;
+    // for (let { send } of this.players) {
+    //   if (send) {
+    //     send(messageType, data);
+    //   }
+    // }
+  }
+
+  handleMessage(socket: Socket, message: any) {
+    if (message.msgType === "set color") {
+      this.setColors(message.changes);
+    } else if (message.msgType == "spymaster") {
+      socket.join("spymaster-" + this.id);
+      socket.emit("send key", this.key);
     }
   }
 
@@ -56,19 +68,41 @@ class CodeNamesGame {
     for (let { i, c } of changes) {
       this.boardColors[i] = c;
     }
+    console.log("setColors");
     this.broadcast("set color", changes);
     this.save();
   }
 
   save() {
-    Model.findByIdAndUpdate(this.id, {
+    console.log("saving with colors " + this.boardColors.toString());
+    Model.findByIdAndUpdate(
+      this.id,
+      {
+        name: this.name,
+        words: this.words,
+        start: this.start,
+        players: [],
+        key: this.key,
+        colors: this.boardColors,
+      },
+      { new: true }
+    )
+      .then((updated) => {
+        console.log(updated);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }
+
+  getData() {
+    return {
       name: this.name,
       words: this.words,
       start: this.start,
-      players: [],
-      key: this.key,
+      players: this.players,
       colors: this.boardColors,
-    });
+    };
   }
 
   static current: Map<string, CodeNamesGame> = new Map();

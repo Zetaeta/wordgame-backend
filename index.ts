@@ -9,7 +9,7 @@ import { Server } from "socket.io";
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
+export const io = new Server(server, {
   cors: {
     origin: ["http://192.168.0.104:3000", "http://localhost:3000"],
   },
@@ -27,13 +27,23 @@ io.on("connection", (socket) => {
         console.log("no game with id" + data.id);
         return;
       }
-      game
-        .joinPlayer(data, (messageType, message) => {
-          socket.emit(messageType, message);
-        })
-        .forEach(([messageType, callback]) => {
-          socket.on(messageType, callback);
-        });
+      socket.join("cn-" + data.id);
+      game.joinPlayer(data, (messageType, message) => {
+        socket.emit(messageType, message);
+      });
+      // .forEach(([messageType, callback]) => {
+      //   console.log("registering listener for " + messageType);
+      //   socket.on(messageType, callback);
+      // });
+    });
+  });
+  socket.on("cnmsg", (message) => {
+    CodeNamesGame.getById(message.gameId).then((game) => {
+      if (!game) {
+        console.log("missing game");
+        return;
+      }
+      game.handleMessage(socket, message);
     });
   });
 });
@@ -57,7 +67,7 @@ app.get("/api/codenames/games", (request, response) => {
 app.get("/api/codenames/:id", (request, response) => {
   const id = request.params.id;
   CodeNamesGame.getById(id).then((game) => {
-    response.json(game);
+    response.json(game?.getData());
   });
 });
 app.post("/api/codenames/new", (request, response) => {
