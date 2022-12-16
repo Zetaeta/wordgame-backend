@@ -50,9 +50,7 @@ io.on("connection", (socket) => {
 app.use(express.json());
 app.use(express.static("build"));
 app.use(cors());
-app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
-});
+
 app.get("/api/codenames/games", (request, response) => {
   // response.json([
   //   {
@@ -76,6 +74,9 @@ app.post("/api/codenames/new", (request, response) => {
     console.log(game);
     response.json(game);
   });
+});
+app.get("*", function (req, res) {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 const PORT = 8000;
 const game = new BigWordGame();
