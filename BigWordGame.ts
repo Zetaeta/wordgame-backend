@@ -36,6 +36,8 @@ export class BigWordGame {
       case "cluevis":
         this.shownClue(message.playerid, message.visible);
         break;
+      case "remplr":
+        this.removePlayer(message.id);
     }
     if (setState) {
       this.broadcastState();
@@ -159,6 +161,7 @@ export class BigWordGame {
     const existing = this.players.findIndex((p) => p.name == name);
     if (existing != -1) {
       this.players[existing].send = sendMessage;
+      this.broadcastState();
       return this.players[existing].id;
     }
     const id = this.newPlayerId();
