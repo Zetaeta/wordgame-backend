@@ -95,7 +95,18 @@ class CodeNamesGame {
     } else if (message.msgType == "shuffle teams") {
       console.log("shoveling teams");
       this.shufflePlayers();
+    } else if (message.msgType == "reveal color") {
+      this.revealColors(message.words);
     }
+  }
+
+  revealColors(indices: number[]) {
+    let changes: { i: number; c: number }[] = [];
+    for (let i of indices) {
+      console.log("revealing word " + i + " with color " + this.key[i]);
+      changes.push({ i: i, c: this.key[i] });
+    }
+    this.setColors(changes);
   }
 
   shufflePlayers() {
@@ -122,7 +133,7 @@ class CodeNamesGame {
       this.players.splice(i, 1);
     }
   };
-  setColors(changes: [{ i: number; c: number }]) {
+  setColors(changes: { i: number; c: number }[]) {
     for (let { i, c } of changes) {
       this.boardColors[i] = c;
     }
