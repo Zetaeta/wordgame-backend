@@ -38,6 +38,14 @@ export class BigWordGame {
         break;
       case "remplr":
         this.removePlayer(message.id);
+        break;
+      case "setcolour":
+        this.broadcast({
+          msgtype: "setcolour",
+          player: this.getPlayer(id).name,
+          colour: message.colour,
+        });
+        break;
     }
     if (setState) {
       this.broadcastState();
@@ -182,6 +190,11 @@ export class BigWordGame {
   broadcastState = () => {
     for (let p of this.players) {
       this.sendMessage(p, this.stateMsg(p));
+    }
+  };
+  broadcast = (message: any) => {
+    for (let p of this.players) {
+      this.sendMessage(p, message);
     }
   };
   showClues = (player: Player) => {
