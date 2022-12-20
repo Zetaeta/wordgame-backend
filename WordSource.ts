@@ -17,7 +17,11 @@ class WordSource {
           return null;
         }
         const name = file.slice(0, -4);
-        return { name: name, file: `words/${file}`, weight: 1 };
+        return {
+          name: name,
+          file: `words/${file}`,
+          weight: file == "words.txt" ? 1 : 0,
+        };
       })
       .filter((f) => f);
     return new WordSource(sources as Source[]);

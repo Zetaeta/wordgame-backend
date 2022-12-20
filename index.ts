@@ -79,6 +79,9 @@ app.post("/api/codenames/new", (request, response) => {
   CodeNamesGame.newGame(request.body.name).then((game) => {
     console.log(game);
     response.json(game);
+    CodeNamesGame.allGames().then((games) => {
+      io.emit("cngames", games);
+    });
   });
 });
 app.get("*", function (req, res) {
