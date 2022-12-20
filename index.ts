@@ -6,7 +6,8 @@ import { BigWordGame } from "./BigWordGame";
 import CodeNamesGame from "./CodenamesGame";
 import cors from "cors";
 import { Server } from "socket.io";
-
+import { listenIdentity } from "./identity";
+require("dotenv").config();
 const app = express();
 const server = http.createServer(app);
 export const io = new Server(server, {
@@ -19,6 +20,11 @@ io.on("connection", (socket) => {
     console.log("receiving message: " + eventName);
     console.log(message);
   });
+  socket.onAnyOutgoing((event, ...args) => {
+    console.log("sending " + event);
+    console.log(args);
+  });
+  listenIdentity(socket);
   socket.on("join codenames", (data) => {
     console.log("join request");
     console.log(data);
@@ -28,7 +34,7 @@ io.on("connection", (socket) => {
         return;
       }
       socket.join("cn-" + data.id);
-      game.joinPlayer(data, (messageType, message) => {
+      game.joinPlayer(socket, data, (messageType, message) => {
         socket.emit(messageType, message);
       });
       // .forEach(([messageType, callback]) => {
@@ -78,7 +84,7 @@ app.post("/api/codenames/new", (request, response) => {
 app.get("*", function (req, res) {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
-const PORT = 8000;
+const PORT = process.env.PORT ? +process.env.PORT : 8000;
 const game = new BigWordGame();
 server.listen(PORT, () => {
   console.log("server running");

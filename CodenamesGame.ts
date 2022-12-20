@@ -2,6 +2,7 @@ import Model from "./models/codenames";
 import { io } from "./index";
 import WordSource from "./WordSource";
 import { Server, Socket } from "socket.io";
+import { getPlayerName, getPlayerData } from "./identity";
 // const io = new Server(3002);
 
 class CodeNamesGame {
@@ -27,22 +28,46 @@ class CodeNamesGame {
 
   // returns list of events to listen for
   joinPlayer(
+    socket: Socket,
     data: any,
     send: (messageType: string, message: any) => void
-  ): [string, (data: any) => void][] {
-    this.players.push({
-      send: send,
-      name: "",
-      team: Red,
+  ) {
+    const { username, displayName } = getPlayerData(socket);
+    if (!this.hasPlayer(username)) {
+      this.players.push({
+        send: send,
+        username: username,
+        team: Red,
+        spymaster: false,
+      });
+    }
+
+    this.sendPlayerInfo();
+  }
+
+  hasPlayer(username: string) {
+    return (
+      this.players.filter((player) => player.username === username).length > 0
+    );
+  }
+
+  sendPlayerInfo() {
+    this.playerInfo().then((info) => {
+      this.broadcast("player data", info);
     });
-    return [
-      [
-        "set color",
-        (data: any) => {
-          this.setColors(data);
-        },
-      ],
-    ];
+  }
+
+  async playerInfo() {
+    return Promise.all(
+      this.players.map(async (player) => {
+        const displayName = await getPlayerName(player.username);
+        return {
+          name: displayName,
+          spymaster: player.spymaster,
+          team: player.team,
+        };
+      })
+    );
   }
 
   broadcast(messageType: string, data: any) {
@@ -56,14 +81,47 @@ class CodeNamesGame {
   }
 
   handleMessage(socket: Socket, message: any) {
+    console.log(message.msgType);
     if (message.msgType === "set color") {
       this.setColors(message.changes);
     } else if (message.msgType == "spymaster") {
       socket.join("spymaster-" + this.id);
       socket.emit("send key", this.key);
+      const { username } = getPlayerData(socket);
+      this.modifyPlayer(username, (player) => {
+        return { ...player, spymaster: true };
+      });
+      this.sendPlayerInfo();
+    } else if (message.msgType == "shuffle teams") {
+      console.log("shoveling teams");
+      this.shufflePlayers();
     }
   }
 
+  shufflePlayers() {
+    const shuffled = shuffle([...this.players]);
+    const teamSizeFactor = Math.random() > 0.5;
+    const breakpoint = Math.floor((shuffled.length + +teamSizeFactor) / 2);
+    for (let i = 0; i < shuffled.length; ++i) {
+      shuffled[i].team = i >= breakpoint ? 2 : 1;
+    }
+    console.log("shuffled players");
+    this.sendPlayerInfo();
+  }
+
+  modifyPlayer = (username: string, f: (player: Player) => Player | null) => {
+    const i = this.players.findIndex((p) => p.username === username);
+    if (i === -1) {
+      console.log("no player with id " + i);
+      return;
+    }
+    const p = f(this.players[i]);
+    if (p) {
+      this.players[i] = p;
+    } else {
+      this.players.splice(i, 1);
+    }
+  };
   setColors(changes: [{ i: number; c: number }]) {
     for (let { i, c } of changes) {
       this.boardColors[i] = c;
@@ -198,8 +256,9 @@ function shuffle<T>(a: T[]) {
 }
 
 interface Player {
-  name: string;
+  username: string;
   team: Team;
+  spymaster: boolean;
   send?: (messageType: string, message: any) => void;
 }
 // type Team = "red" | "blue";
