@@ -7,6 +7,7 @@ export class BigWordGame {
   phase: Phase = Phase.Prelim;
   players: Player[] = [];
   clues: Map<PlayerId, Clue> = new Map<PlayerId, Clue>();
+  colors: Map<PlayerId, number> = new Map();
   source: WordSource = WordSource.default();
 
   handleMessage(message: any, id: PlayerId) {
@@ -40,6 +41,7 @@ export class BigWordGame {
         this.removePlayer(message.id);
         break;
       case "setcolour":
+        this.colors.set(id, message.colour);
         this.broadcast({
           msgtype: "setcolour",
           player: this.getPlayer(id).name,
@@ -170,6 +172,7 @@ export class BigWordGame {
     if (existing != -1) {
       this.players[existing].send = sendMessage;
       this.broadcastState();
+      sendMessage(this.allColors());
       return this.players[existing].id;
     }
     const id = this.newPlayerId();
@@ -181,8 +184,22 @@ export class BigWordGame {
       role: "clue",
     });
     this.broadcastState();
+    sendMessage(this.allColors());
     return id;
   };
+
+  allColors() {
+    return {
+      msgtype: "allcolors",
+      colours: Object.fromEntries(
+        Array.from(this.colors.entries()).map(([id, color]) => [
+          this.getPlayer(id).name,
+          color,
+        ])
+      ),
+    };
+  }
+
   newPlayerId = (): PlayerId => {
     const currMax = this.players.reduce((m, p) => Math.max(m, p.id), -1);
     return currMax + 1;
