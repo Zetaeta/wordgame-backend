@@ -65,13 +65,25 @@ app.get("/api/codenames/games", (request, response) => {
   //   },
   // ]);
   CodeNamesGame.allGames().then((games) => {
-    response.json(games);
+    response.json(
+      games.map((game) => ({
+        name: game.name,
+        id: game.id,
+        colors: game.colors,
+      }))
+    );
   });
 });
 app.get("/api/codenames/:id", (request, response) => {
   const id = request.params.id;
   CodeNamesGame.getById(id).then((game) => {
     response.json(game?.getData());
+  });
+});
+app.post("/api/codenames/delete/:id", (request, response) => {
+  const id = request.params.id;
+  CodeNamesGame.deleteGame(id).then((result) => {
+    response.status(204).end();
   });
 });
 app.post("/api/codenames/new", (request, response) => {

@@ -190,7 +190,26 @@ class CodeNamesGame {
 
   static async allGames() {
     const games = await Model.find({});
-    return games;
+    return games.reverse();
+  }
+
+  static async deleteGame(id: string) {
+    console.log("deleting game " + id);
+    const room = "cn-" + id;
+    io.in(room).emit("leave-cn-game", { id: id });
+    const sockets = await io.sockets.in(room).fetchSockets();
+    sockets.forEach((s) => {
+      s.leave(room);
+    });
+    Model.findByIdAndDelete(id)
+      .then(() => {
+        console.log("deleted");
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    CodeNamesGame.current.delete(id);
+    console.log(CodeNamesGame.current);
   }
 
   static async newGame(name: string) {
