@@ -7,6 +7,7 @@ import CodeNamesGame from "./CodenamesGame";
 import cors from "cors";
 import { Server } from "socket.io";
 import { listenIdentity } from "./identity";
+import WordSource from "./WordSource";
 require("dotenv").config();
 const app = express();
 const server = http.createServer(app);
@@ -88,7 +89,7 @@ app.post("/api/codenames/delete/:id", (request, response) => {
 });
 app.post("/api/codenames/new", (request, response) => {
   console.log(request.body);
-  CodeNamesGame.newGame(request.body.name).then((game) => {
+  CodeNamesGame.newGame(request.body).then((game) => {
     console.log(game);
     response.json(game);
     CodeNamesGame.allGames().then((games) => {
@@ -96,11 +97,19 @@ app.post("/api/codenames/new", (request, response) => {
     });
   });
 });
+const game = new BigWordGame();
+app.get("/api/wordsource/current", (request, response) => {
+  const source = game.source;
+  response.json(source.serialize());
+});
+app.get("/api/wordsource/default", (request, response) => {
+  const source = WordSource.default();
+  response.json(source.serialize());
+});
 app.get("*", function (req, res) {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 const PORT = process.env.PORT ? +process.env.PORT : 8000;
-const game = new BigWordGame();
 server.listen(PORT, () => {
   console.log("server running");
   const wss = new WebSocketServer({ port: 3001 });

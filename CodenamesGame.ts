@@ -212,8 +212,13 @@ class CodeNamesGame {
     console.log(CodeNamesGame.current);
   }
 
-  static async newGame(name: string) {
-    const source = WordSource.default();
+  static async newGame(props: { name: string; source: any[] }) {
+    let source;
+    if (!props.source) {
+      source = WordSource.default();
+    } else {
+      source = WordSource.deserialize(props.source);
+    }
     let words: string[] = [];
     while (words.length < 25) {
       const word = source.getWord();
@@ -223,7 +228,7 @@ class CodeNamesGame {
     }
     const start = randFrom([Color.Red, Color.Blue]) as Team;
     const datum = new Model({
-      name: name,
+      name: props.name,
       words: words,
       start: start,
       colors: new Array(25).fill(0),

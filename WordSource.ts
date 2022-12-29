@@ -27,6 +27,30 @@ class WordSource {
     return new WordSource(sources as Source[]);
   }
 
+  serialize() {
+    return this.sources.map((source) => {
+      return {
+        file: source.name,
+        weight: source.weight,
+        desc: source.description,
+      };
+    });
+  }
+
+  static deserialize(data: any[]) {
+    const sources = [...WordSource.default().sources];
+    for (let entry of data) {
+      const name = entry.file;
+      sources
+        .filter((s) => s.name == name)
+        .forEach((s) => {
+          s.weight = entry.weight;
+        });
+    }
+    console.log(sources);
+    return new WordSource(sources);
+  }
+
   getWord() {
     const source = weightedRandom(this.sources);
     const words = this.loadSource(source);
@@ -37,7 +61,11 @@ class WordSource {
     if (source.cache) {
       return source.cache;
     }
-    const lines = fs.readFileSync(source.file).toString().split("\n");
+    const lines = fs
+      .readFileSync(source.file)
+      .toString()
+      .split("\n")
+      .filter((l) => l.length > 0);
     source.cache = lines;
     return lines;
   }
