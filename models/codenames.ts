@@ -1,19 +1,5 @@
 import mongoose from "mongoose";
-require("dotenv").config();
-const url = process.env.MONGODB_URI;
-if (!url) {
-  console.log("url missing");
-} else {
-  console.log("connecting to", url);
-  mongoose
-    .connect(url)
-    .then((result) => {
-      console.log("connected");
-    })
-    .catch((error) => {
-      console.log("error connecting to mongo db:", error.message);
-    });
-}
+
 const codenamesSchema = new mongoose.Schema({
   name: String,
   starts: Number,

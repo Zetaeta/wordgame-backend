@@ -8,7 +8,23 @@ import cors from "cors";
 import { Server } from "socket.io";
 import { listenIdentity } from "./identity";
 import WordSource from "./WordSource";
+import mongoose from "mongoose";
+import Decrypto from "./Decrypto";
 require("dotenv").config();
+const url = process.env.MONGODB_URI;
+if (!url) {
+  console.log("url missing");
+} else {
+  console.log("connecting to", url);
+  mongoose
+    .connect(url)
+    .then((result) => {
+      console.log("connected");
+    })
+    .catch((error) => {
+      console.log("error connecting to mongo db:", error.message);
+    });
+}
 const app = express();
 const server = http.createServer(app);
 export const io = new Server(server, {
@@ -44,8 +60,33 @@ io.on("connection", (socket) => {
       // });
     });
   });
+  socket.on("join decrypto", (data) => {
+    console.log("join request");
+    console.log(data);
+    const game = Decrypto.getById(data.id).then((game) => {
+      if (!game) {
+        console.log("no game with id" + data.id);
+        return;
+      }
+      // socket.join("dc-" + data.id);
+      game.join(socket);
+      // .forEach(([messageType, callback]) => {
+      //   console.log("registering listener for " + messageType);
+      //   socket.on(messageType, callback);
+      // });
+    });
+  });
   socket.on("cnmsg", (message) => {
     CodeNamesGame.getById(message.gameId).then((game) => {
+      if (!game) {
+        console.log("missing game");
+        return;
+      }
+      game.handleMessage(socket, message);
+    });
+  });
+  socket.on("dcmsg", (message) => {
+    Decrypto.getById(message.gameId).then((game) => {
       if (!game) {
         console.log("missing game");
         return;
@@ -75,6 +116,28 @@ app.get("/api/codenames/games", (request, response) => {
     );
   });
 });
+app.get("/api/decrypto/games", (request, response) => {
+  // response.json([
+  //   {
+  //     name: "game",
+  //     id: 1,
+  //   },
+  // ]);
+  Decrypto.allGames().then((games) => {
+    response.json(
+      games.map((game) => ({
+        name: game.name,
+        id: game.id,
+      }))
+    );
+  });
+});
+app.get("/api/decrypto/:id", (request, response) => {
+  const id = request.params.id;
+  Decrypto.getById(id).then((game) => {
+    response.json(game?.getBaseData());
+  });
+});
 app.get("/api/codenames/:id", (request, response) => {
   const id = request.params.id;
   CodeNamesGame.getById(id).then((game) => {
@@ -95,6 +158,15 @@ app.post("/api/codenames/new", (request, response) => {
     CodeNamesGame.allGames().then((games) => {
       io.emit("cngames", games);
     });
+  });
+});
+app.post("/api/decrypto/new", (request, response) => {
+  console.log(request.body);
+  const game = Decrypto.newGame(request.body);
+  console.log(game);
+  response.json(game);
+  Decrypto.allGames().then((games) => {
+    io.emit("dcgames", games);
   });
 });
 const game = new BigWordGame();
