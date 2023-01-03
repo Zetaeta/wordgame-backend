@@ -1,23 +1,22 @@
 import Player from "./models/player";
 import { Socket } from "socket.io";
-type MySocket = Socket & { sockUsername: string };
+// type MySocket = Socket & { sockUsername: string };
 type PlayerData = { displayName: string; username: string };
 let players: PlayerData[] = [];
 let playerNames = new Map<string, string>();
 
-export async function getPlayerName(identifier: string) {
-  let username = "";
-  if (typeof identifier == "string") {
-    username = identifier;
-  } else {
-    const sock = identifier as MySocket;
+export async function getPlayerName(username: string) {
+  try {
+    await loadPlayer(username);
+  } catch (e) {
+    console.error(e);
+    return "Error";
   }
-  await loadPlayer(username);
   return playerNames.get(username) as string;
 }
 
 export function getPlayerData(socket: Socket) {
-  const username = (socket as MySocket).sockUsername;
+  const username = socket.data.username;
   if (username === undefined) {
     throw "missing username";
   }
@@ -39,14 +38,22 @@ async function loadPlayer(username: string) {
 }
 
 export function listenIdentity(socket: Socket) {
+  const auth = socket.handshake.auth;
+  if (auth.username) {
+    socket.data.username = auth.username;
+    if (auth.displayname) {
+      playerNames.set(auth.username, auth.displayname);
+      setOrCreatePlayer(auth.username, auth.displayName);
+    }
+  }
   socket.on("login", (message: { username: string; displayName: string }) => {
     const { username, displayName } = message;
-    (socket as MySocket).sockUsername = username;
+    socket.data.username = username;
     playerNames.set(username, displayName);
     setOrCreatePlayer(username, displayName);
   });
   socket.on("change name", (message) => {
-    const username = (socket as MySocket).sockUsername;
+    const username = socket.data.username;
     if (!username) {
       throw "missing username";
     }

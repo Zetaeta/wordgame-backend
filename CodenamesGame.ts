@@ -3,6 +3,7 @@ import { io } from "./index";
 import WordSource from "./WordSource";
 import { Server, Socket } from "socket.io";
 import { getPlayerName, getPlayerData } from "./identity";
+import { shuffle } from "./utils";
 // const io = new Server(3002);
 
 class CodeNamesGame {
@@ -32,14 +33,19 @@ class CodeNamesGame {
     data: any,
     send: (messageType: string, message: any) => void
   ) {
-    const { username, displayName } = getPlayerData(socket);
-    if (!this.hasPlayer(username)) {
-      this.players.push({
-        send: send,
-        username: username,
-        team: Red,
-        spymaster: false,
-      });
+    try {
+      const { username, displayName } = getPlayerData(socket);
+      if (!this.hasPlayer(username)) {
+        this.players.push({
+          send: send,
+          username: username,
+          team: Red,
+          spymaster: false,
+        });
+      }
+    } catch (e) {
+      console.log("Error joining player");
+      console.log(e);
     }
 
     this.sendPlayerInfo();
@@ -213,19 +219,8 @@ class CodeNamesGame {
   }
 
   static async newGame(props: { name: string; source: any[] }) {
-    let source;
-    if (!props.source) {
-      source = WordSource.default();
-    } else {
-      source = WordSource.deserialize(props.source);
-    }
-    let words: string[] = [];
-    while (words.length < 25) {
-      const word = source.getWord();
-      if (!words.includes(word)) {
-        words.push(word);
-      }
-    }
+    const source = WordSource.deserialize(props.source);
+    const words = source.getDistinctWords(25);
     const start = randFrom([Color.Red, Color.Blue]) as Team;
     const datum = new Model({
       name: props.name,
@@ -276,18 +271,6 @@ function newKey(starts: Team) {
 function randFrom<T>(list: T[]) {
   const i = Math.floor(Math.random() * list.length);
   return list[i];
-}
-
-/**
- * Shuffles array in place. ES6 version from https://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array/6274381#6274381
- * @param {Array} a items An array containing the items.
- */
-function shuffle<T>(a: T[]) {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 interface Player {

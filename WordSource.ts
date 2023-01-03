@@ -37,16 +37,20 @@ class WordSource {
     });
   }
 
-  static deserialize(data: any[]) {
+  // deserialize list of sources or returns default source if falsy
+  static deserialize(data: any) {
     const sources = [...WordSource.default().sources];
-    for (let entry of data) {
-      const name = entry.file;
-      sources
-        .filter((s) => s.name == name)
-        .forEach((s) => {
-          s.weight = entry.weight;
-        });
+    if (Array.isArray(data)) {
+      for (let entry of data) {
+        const name = entry.file;
+        sources
+          .filter((s) => s.name == name)
+          .forEach((s) => {
+            s.weight = entry.weight;
+          });
+      }
     }
+
     console.log(sources);
     return new WordSource(sources);
   }
@@ -55,6 +59,17 @@ class WordSource {
     const source = weightedRandom(this.sources);
     const words = this.loadSource(source);
     return words[randomInt(words.length)];
+  }
+
+  getDistinctWords(n: number) {
+    let words: string[] = [];
+    while (words.length < n) {
+      const word = this.getWord();
+      if (!words.includes(word)) {
+        words.push(word);
+      }
+    }
+    return words;
   }
 
   loadSource(source: Source) {
