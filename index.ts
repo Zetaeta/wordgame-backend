@@ -134,9 +134,18 @@ app.get("/api/decrypto/games", (request, response) => {
 });
 app.get("/api/decrypto/:id", (request, response) => {
   const id = request.params.id;
-  Decrypto.getById(id).then((game) => {
-    response.json(game?.getBaseData());
-  });
+  Decrypto.getById(id)
+    .then((game) => {
+      if (!game) {
+        response.status(404).end();
+        return;
+      }
+      response.json(game?.getBaseData());
+    })
+    .catch((e) => {
+      console.error(e);
+      response.status(404).end();
+    });
 });
 app.get("/api/codenames/:id", (request, response) => {
   const id = request.params.id;
