@@ -34,6 +34,8 @@ async function loadPlayer(username: string) {
   if (!player) {
     throw "No player with username" + username;
   }
+  console.log("Loaded player");
+  console.log(player);
   playerNames.set(player.username, player.displayName);
 }
 
@@ -57,19 +59,32 @@ export function listenIdentity(socket: Socket) {
     if (!username) {
       throw "missing username";
     }
-    const displayName = message;
+    const displayName = message.displayName;
+    if (!displayName) {
+      console.error("missing displayName");
+      return;
+    }
     playerNames.set(username, displayName);
     setOrCreatePlayer(username, displayName);
   });
 }
 
 async function setOrCreatePlayer(username: string, displayName: string) {
+  console.log("socp " + username + " " + displayName);
   const matches = await Player.find({ username: username });
   if (matches.length) {
     const player = matches[0];
     player.displayName = displayName;
-    player.save();
+    player.save().then((p) => {
+      console.log("saved player");
+      console.log(p);
+    });
   } else {
-    new Player({ displayName: displayName, username: username }).save();
+    new Player({ displayName: displayName, username: username })
+      .save()
+      .then((p) => {
+        console.log("saved player");
+        console.log(p);
+      });
   }
 }

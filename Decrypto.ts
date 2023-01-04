@@ -158,6 +158,7 @@ class Decrypto {
       teamGuess: [],
       enemyGuess: [],
     });
+    this.model.activeTeam = 1 - teamNo;
     this.model.save();
     this.sendGameStatus();
     this.sendHistory();
@@ -377,17 +378,22 @@ class Decrypto {
 
   static async getById(id: string) {
     console.log("looking for game with id" + id);
-    if (Decrypto.current.has(id)) {
-      return Decrypto.current.get(id);
+    try {
+      if (Decrypto.current.has(id)) {
+        return Decrypto.current.get(id);
+      }
+      const gameData = await DCModel.findById(id);
+      console.log(gameData);
+      if (!gameData) {
+        throw "missing game with id" + id;
+      }
+      const game = new Decrypto(gameData);
+      Decrypto.current.set(id, game);
+      return game;
+    } catch (e) {
+      console.error(e);
+      return null;
     }
-    const gameData = await DCModel.findById(id);
-    console.log(gameData);
-    if (!gameData) {
-      throw "missing game with id" + id;
-    }
-    const game = new Decrypto(gameData);
-    Decrypto.current.set(id, game);
-    return game;
   }
 
   static async allGames() {
