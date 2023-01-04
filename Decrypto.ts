@@ -61,19 +61,25 @@ class Decrypto {
     if (this.model.phase == Phase.PreStart) {
       const teams = this.model.teams;
       if (teams[0].players.length > teams[1].players.length) {
-        teams[1].players.push(username);
+        this.addPlayer(socket, username, 1);
       } else {
-        teams[0].players.push(username);
+        this.addPlayer(socket, username, 0);
       }
-      socket.join("dc-" + this.model._id);
-      this.sends.set(username, (message) => {
-        socket.emit("dcmsg", message);
-      });
-      this.sendGameStatus();
     } else {
       console.log("late join");
       this.sendLateJoin(socket);
     }
+  }
+
+  addPlayer(socket: Socket, username: string, team: number) {
+    this.model.teams[team].players.push(username);
+    socket.join("dc-" + this.model._id);
+    this.sends.set(username, (message) => {
+      socket.emit("dcmsg", message);
+    });
+    this.sendGameStatus();
+    this.sendPlayerInfo();
+    this.model.save();
   }
 
   join(socket: Socket) {
@@ -87,17 +93,17 @@ class Decrypto {
       });
       socket.join("dc-" + this.model._id);
       this.sendGameStatus();
+      this.sendPlayerInfo();
     }
-    this.sendPlayerInfo();
     this.sendHistory();
   }
 
   handleMessage(socket: Socket, message: any) {
     const { username } = getPlayerData(socket);
     const msgType = message.msgType;
-    if (msgType == "latejoin") {
-      const team = message.joinTeam;
-      this.model.teams[team].players.push(username);
+    if (msgType == "lateJoin") {
+      const team = message.team;
+      this.addPlayer(socket, username, team);
     } else if (msgType === "sendClue") {
       this.sentClue(message, username);
     } else if (msgType == "sendEnemyGuess") {
@@ -366,7 +372,14 @@ class Decrypto {
     io.to("dc-" + this.id + "-players").emit("dcmsg", msg);
   }
 
-  sendLateJoin(socket: Socket) {}
+  sendLateJoin(socket: Socket) {
+    socket.emit("dcmsg", {
+      msgType: "status",
+      phase: this.model.phase,
+      myStatus: "lateJoin",
+    });
+    this.sendPlayerInfo();
+  }
 
   getBaseData() {
     return {
