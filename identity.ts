@@ -40,12 +40,15 @@ async function loadPlayer(username: string) {
 }
 
 export function listenIdentity(socket: Socket) {
-  const auth = socket.handshake.auth;
+  const auth: { username: string; displayname: string } = socket.handshake
+    .auth as any;
+  console.log("auth");
+  console.log(auth);
   if (auth.username) {
     socket.data.username = auth.username;
     if (auth.displayname) {
       playerNames.set(auth.username, auth.displayname);
-      setOrCreatePlayer(auth.username, auth.displayName);
+      setOrCreatePlayer(auth.username, auth.displayname);
     }
   }
   socket.on("login", (message: { username: string; displayName: string }) => {
