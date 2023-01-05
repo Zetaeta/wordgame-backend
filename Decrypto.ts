@@ -157,6 +157,14 @@ class Decrypto {
     active.roundNo++;
     const newKey = genKey(active.keyDeck[active.roundNo]);
     const newGiver = this.nextPlayer(teamNo, active.rounds[0].clueGiver);
+    const last = active.rounds[0];
+    this.score();
+    if (!equals(last.key, last.teamGuess)) {
+      this.model.score[teamNo].misses++;
+    }
+    if (equals(last.key, last.enemyGuess)) {
+      this.model.score[1 - teamNo].hits++;
+    }
     active.rounds.unshift({
       key: newKey,
       clueGiver: newGiver,
@@ -264,6 +272,7 @@ class Decrypto {
   }
 
   sendGameStatus() {
+    this.score();
     const phase = this.model.phase;
     const activeTeam = this.model.activeTeam;
     this.model.teams.forEach((team, teamNo) => {
@@ -284,6 +293,10 @@ class Decrypto {
           theirClues: enemy.rounds[0]?.clues,
           theirGuess: team.rounds[0]?.enemyGuess,
           myStatus: "waiting",
+          score: {
+            team: this.model.score[teamNo],
+            enemy: this.model.score[1 - teamNo],
+          },
         };
         if (team.rounds[0]?.clueGiver == player) {
           msg.key = team.rounds[0].key;
@@ -302,6 +315,30 @@ class Decrypto {
         sendMsg(msg);
       });
     });
+  }
+
+  score() {
+    let score = this.model.score;
+    if (score && score[0]) {
+      return score;
+    }
+    score = [
+      { hits: 0, misses: 0 },
+      { hits: 0, misses: 0 },
+    ];
+    this.model.teams.forEach((team, teamNo) => {
+      const enemy = 1 - teamNo;
+      for (let round of team.rounds.slice(1)) {
+        if (equals(round.key, round.enemyGuess)) {
+          score[enemy].hits++;
+        }
+        if (!equals(round.key, round.teamGuess)) {
+          score[teamNo].misses++;
+        }
+      }
+    });
+    this.model.score = score;
+    return score;
   }
 
   canStart() {
