@@ -2,12 +2,12 @@
   "name": "wordgame",
   "version": "1.0.0",
   "description": "Wordgame full stack",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:ui": "rm -rf build && cd ../wordgame-frontend/ && npm run build && cp -r build ../wordgame-backend",
     "ts-node": "ts-node",
-    "start": "ts-node index.ts",
+    "start": "ts-node src/index.ts",
     "lint": "eslint . --ext .ts",
     "lintfix": "eslint . --ext .ts --fix"
   },
