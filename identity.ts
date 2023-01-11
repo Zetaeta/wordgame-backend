@@ -2,8 +2,8 @@ import Player from "./models/player";
 import { Socket } from "socket.io";
 // type MySocket = Socket & { sockUsername: string };
 type PlayerData = { displayName: string; username: string };
-let players: PlayerData[] = [];
-let playerNames = new Map<string, string>();
+const players: PlayerData[] = [];
+const playerNames = new Map<string, string>();
 
 export async function getPlayerName(username: string) {
   try {
@@ -28,7 +28,7 @@ async function loadPlayer(username: string) {
   if (playerNames.has(username)) {
     return;
   }
-  let [player] = (await Player.find({
+  const [player] = (await Player.find({
     username: username,
   })) as [PlayerData];
   if (!player) {

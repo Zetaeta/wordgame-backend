@@ -41,7 +41,7 @@ class WordSource {
   static deserialize(data: any) {
     const sources = [...WordSource.default().sources];
     if (Array.isArray(data)) {
-      for (let entry of data) {
+      for (const entry of data) {
         const name = entry.file;
         sources
           .filter((s) => s.name == name)
@@ -62,7 +62,7 @@ class WordSource {
   }
 
   getDistinctWords(n: number) {
-    let words: string[] = [];
+    const words: string[] = [];
     while (words.length < n) {
       const word = this.getWord();
       if (!words.includes(word)) {
@@ -99,14 +99,14 @@ function randomInt(max: number) {
 }
 
 function weightedRandom(sources: Source[]) {
-  var i;
+  let i;
 
-  let weights: number[] = [];
+  const weights: number[] = [];
 
   for (i = 0; i < sources.length; i++)
     weights[i] = sources[i].weight + (weights[i - 1] || 0);
 
-  var random = Math.random() * weights[weights.length - 1];
+  const random = Math.random() * weights[weights.length - 1];
 
   for (i = 0; i < weights.length; i++) if (weights[i] > random) break;
 

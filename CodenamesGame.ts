@@ -107,8 +107,8 @@ class CodeNamesGame {
   }
 
   revealColors(indices: number[]) {
-    let changes: { i: number; c: number }[] = [];
-    for (let i of indices) {
+    const changes: { i: number; c: number }[] = [];
+    for (const i of indices) {
       console.log("revealing word " + i + " with color " + this.key[i]);
       changes.push({ i: i, c: this.key[i] });
     }
@@ -140,7 +140,7 @@ class CodeNamesGame {
     }
   };
   setColors(changes: { i: number; c: number }[]) {
-    for (let { i, c } of changes) {
+    for (const { i, c } of changes) {
       this.boardColors[i] = c;
     }
     console.log("setColors");

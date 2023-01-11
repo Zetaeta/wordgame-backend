@@ -1,9 +1,9 @@
 import WordSource from "./WordSource";
 
 export class BigWordGame {
-  word: string = "";
-  guess: string = "";
-  guesser: string = "";
+  word = "";
+  guess = "";
+  guesser = "";
   phase: Phase = Phase.Prelim;
   players: Player[] = [];
   clues: Map<PlayerId, Clue> = new Map<PlayerId, Clue>();
@@ -47,6 +47,7 @@ export class BigWordGame {
           player: this.getPlayer(id).name,
           colour: message.colour,
         });
+        setState = false;
         break;
     }
     if (setState) {
@@ -93,13 +94,13 @@ export class BigWordGame {
     }
   };
   nextRound = () => {
-    for (let p of this.players) {
+    for (const p of this.players) {
       p.ready = false;
     }
     this.startRound();
   };
   nextPhase = () => {
-    for (let p of this.players) {
+    for (const p of this.players) {
       p.ready = false;
     }
     if (this.phase === Phase.MakeClues) {
@@ -205,12 +206,12 @@ export class BigWordGame {
     return currMax + 1;
   };
   broadcastState = () => {
-    for (let p of this.players) {
+    for (const p of this.players) {
       this.sendMessage(p, this.stateMsg(p));
     }
   };
   broadcast = (message: any) => {
-    for (let p of this.players) {
+    for (const p of this.players) {
       this.sendMessage(p, message);
     }
   };
@@ -230,7 +231,7 @@ export class BigWordGame {
     return this.phase == Phase.Complete;
   };
   stateMsg = (player: Player) => {
-    let pers: any = { role: player.role };
+    const pers: any = { role: player.role };
     if (this.showClues(player)) {
       let entries = [...this.clues];
       if (player.role == "guess" && this.phase == Phase.MakeGuess) {

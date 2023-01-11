@@ -10,7 +10,9 @@ import { listenIdentity } from "./identity";
 import WordSource from "./WordSource";
 import mongoose from "mongoose";
 import Decrypto from "./Decrypto";
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
+// require("dotenv").config();
 const url = process.env.MONGODB_URI;
 if (!url) {
   console.log("url missing");

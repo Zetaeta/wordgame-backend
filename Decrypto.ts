@@ -181,7 +181,7 @@ class Decrypto {
 
   startGame() {
     this.model.phase = Phase.MakeClues;
-    for (let team of this.model.teams) {
+    for (const team of this.model.teams) {
       const key = genKey(team.keyDeck[0]);
       const giver = team.players[0];
       team.rounds.unshift({
@@ -226,7 +226,7 @@ class Decrypto {
         team: teamHistory[teamNo],
         enemy: teamHistory[1 - teamNo],
       };
-      for (let player of team.players) {
+      for (const player of team.players) {
         this.send(player, {
           msgType: "history",
           history: history,
@@ -328,7 +328,7 @@ class Decrypto {
     ];
     this.model.teams.forEach((team, teamNo) => {
       const enemy = 1 - teamNo;
-      for (let round of team.rounds.slice(1)) {
+      for (const round of team.rounds.slice(1)) {
         if (equals(round.key, round.enemyGuess)) {
           score[enemy].hits++;
         }
@@ -479,7 +479,7 @@ function equals<T>(a: T[], b: T[]) {
   return true;
 }
 
-export function genKey(i: number, n: number = 4, amount = 3) {
+export function genKey(i: number, n = 4, amount = 3) {
   const remaining = range(n);
   const key: number[] = [];
   while (n > 1 && amount > 0) {
