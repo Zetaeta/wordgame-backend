@@ -190,7 +190,7 @@ app.get("/api/wordsource/default", (request, response) => {
   response.json(source.serialize());
 });
 app.get("*", function (req, res) {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  res.sendFile(path.join(process.cwd(), "build", "index.html"));
 });
 const PORT = process.env.PORT ? +process.env.PORT : 8000;
 server.listen(PORT, () => {
