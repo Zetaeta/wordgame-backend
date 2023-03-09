@@ -152,6 +152,7 @@ export class BigWordGame {
   removePlayer = (id: PlayerId) => {
     this.sendMessage(this.getPlayer(id), { msgtype: "removed" });
     this.modifyPlayer(id, (p) => null);
+    this.colors.delete(id);
   };
   sendMessage = (p: Player, message: any) => {
     try {
@@ -193,10 +194,15 @@ export class BigWordGame {
     return {
       msgtype: "allcolors",
       colours: Object.fromEntries(
-        Array.from(this.colors.entries()).map(([id, color]) => [
-          this.getPlayer(id).name,
-          color,
-        ])
+        Array.from(this.colors.entries())
+          .map(([id, color]) => {
+            const player = this.getPlayer(id);
+            if (player) {
+              return [player.name, color];
+            }
+            return null;
+          })
+          .filter((x) => x) as [[string, number]]
       ),
     };
   }
